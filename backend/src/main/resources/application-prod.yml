@@ -1,0 +1,18 @@
+# Activated with SPRING_PROFILES_ACTIVE=prod. ProductionSafetyCheck refuses to start if CLIENT_URL is not https,
+# the refresh cookie is not Secure, or JWT secrets are blank. Provider rules (cloudinary required unless
+# MEDIA_ALLOW_LOCAL_IN_PRODUCTION=true) live in MediaStorageConfig.
+app:
+  cookie:
+    secure: ${COOKIE_SECURE:true}
+    same-site: ${COOKIE_SAME_SITE:None}
+server:
+  forward-headers-strategy: framework   # honour X-Forwarded-Proto from the host's HTTPS proxy
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+logging:
+  level:
+    root: INFO
+    org.apache.hc: WARN
+    com.cloudinary: WARN

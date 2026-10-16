@@ -1,0 +1,220 @@
+spring:
+  application:
+    name: vtchat-backend
+  config:
+    # import: optional:file:.env[.properties]
+    import: optional:file:./backend/.env[.properties]
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:vtchat}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 2s
+      connect-timeout: 2s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: 2s
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  jackson:
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: ${MAX_UPLOAD_REQUEST_MB:100}MB
+      max-request-size: ${MAX_UPLOAD_REQUEST_MB:100}MB
+
+logging:
+  pattern:
+    level: "%5p [req=%X{requestId:-}]"
+
+server:
+  port: ${SERVER_PORT:${PORT:8080}}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+app:
+  client:
+    url: ${CLIENT_URL:http://localhost:5173}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+    email-from: ${EMAIL_FROM:}
+  jwt:
+    secret: ${JWT_SECRET:}
+    access-expiration: ${JWT_ACCESS_EXPIRATION:900000}
+    refresh-secret: ${JWT_REFRESH_SECRET:}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  otp:
+    secret: ${OTP_SECRET:}
+    expiration-seconds: ${OTP_EXPIRATION_SECONDS:300}
+    max-attempts: ${OTP_MAX_ATTEMPTS:5}
+    resend-cooldown-seconds: ${OTP_RESEND_COOLDOWN_SECONDS:60}
+  storage:
+    upload-dir: ${UPLOAD_DIR:./uploads}
+    max-avatar-mb: ${AVATAR_MAX_MB:2}
+  media:
+    upload-dir: ${MEDIA_LOCAL_ROOT:${MEDIA_UPLOAD_DIR:${UPLOAD_DIR:./uploads}}}
+    max-image-size: ${MAX_IMAGE_SIZE:10}
+    max-video-size: ${MAX_VIDEO_SIZE:50}
+    max-file-size: ${MAX_FILE_SIZE:25}
+    max-voice-size: ${MAX_VOICE_SIZE:10}
+  presence:
+    offline-grace-seconds: ${PRESENCE_OFFLINE_GRACE_SECONDS:5}
+    typing-ttl-seconds: ${TYPING_TTL_SECONDS:7}
+  call:
+    ring-timeout-seconds: ${CALL_RING_TIMEOUT:${CALL_RING_TIMEOUT_SECONDS:30}}
+    connect-timeout-seconds: ${CALL_CONNECT_TIMEOUT_SECONDS:45}
+    disconnect-grace-seconds: ${CALL_DISCONNECT_GRACE_SECONDS:15}
+    stun-server: ${STUN_SERVER:stun:stun.l.google.com:19302}
+    turn-urls: ${TURN_SERVER_URLS:}
+    turn-shared-secret: ${TURN_SHARED_SECRET:}
+    turn-credential-ttl-seconds: ${TURN_CREDENTIAL_TTL_SECONDS:3600}
+  cookie:
+    name: vtchat_refresh
+    secure: ${COOKIE_SECURE:false}
+    same-site: ${COOKIE_SAME_SITE:Lax}
+
+media-storage:
+  provider: ${MEDIA_STORAGE_PROVIDER:local}
+  allow-local-in-production: ${MEDIA_ALLOW_LOCAL_IN_PRODUCTION:false}
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+    api-key: ${CLOUDINARY_API_KEY:}
+    api-secret: ${CLOUDINARY_API_SECRET:}
+    folder: ${CLOUDINARY_FOLDER:vtchat}
+    api-timeout-ms: ${CLOUDINARY_API_TIMEOUT_MS:20000}
+    upload-timeout-ms: ${CLOUDINARY_UPLOAD_TIMEOUT_MS:300000}
+    download-timeout-ms: ${CLOUDINARY_DOWNLOAD_TIMEOUT_MS:60000}
+    connect-timeout-ms: ${CLOUDINARY_CONNECT_TIMEOUT_MS:5000}
+    verify-on-startup: ${CLOUDINARY_VERIFY_ON_STARTUP:true}
+
+media-migration:
+  enabled: ${MEDIA_MIGRATION_ENABLED:false}
+  dry-run: ${MEDIA_MIGRATION_DRY_RUN:true}
+  retry-failed: ${MEDIA_MIGRATION_RETRY_FAILED:false}
+  limit: ${MEDIA_MIGRATION_LIMIT:0}
+  exit-when-done: ${MEDIA_MIGRATION_EXIT_WHEN_DONE:true}
+
+avatar-migration:
+  enabled: ${AVATAR_MIGRATION_ENABLED:false}
+  dry-run: ${AVATAR_MIGRATION_DRY_RUN:true}
+  retry-failed: ${AVATAR_MIGRATION_RETRY_FAILED:false}
+  limit: ${AVATAR_MIGRATION_LIMIT:0}
+  exit-when-done: ${AVATAR_MIGRATION_EXIT_WHEN_DONE:true}
+
+translation:
+  service:
+    url: ${TRANSLATION_SERVICE_URL:http://localhost:8001}
+    api-key: ${TRANSLATION_SERVICE_API_KEY:}
+    timeout-ms: ${TRANSLATION_SERVICE_TIMEOUT_MS:10000}
+    connect-timeout-ms: 2000
+  max-text-length: 2000
+  languages:
+    en: English
+    ta: Tamil
+    hi: Hindi
+    ml: Malayalam
+    kn: Kannada
+
+vtchat:
+  instance-id: ${WEBSOCKET_INSTANCE_ID:${INSTANCE_ID:instance-1}}
+  redis:
+    enabled: ${REDIS_ENABLED:true}
+    cache-ttl-seconds: ${REDIS_CACHE_TTL_SECONDS:300}
+    search-cache-ttl-seconds: ${REDIS_SEARCH_CACHE_TTL_SECONDS:30}
+    unread-ttl-seconds: ${REDIS_UNREAD_TTL_SECONDS:60}
+    session-ttl-seconds: ${WS_SESSION_TTL_SECONDS:90}
+    heartbeat-seconds: ${WS_HEARTBEAT_SECONDS:30}
+    channels:
+      messages: ${REDIS_CHANNEL_MESSAGES:vtchat:messages}
+      notifications: ${REDIS_CHANNEL_NOTIFICATIONS:vtchat:notifications}
+      calls: ${REDIS_CHANNEL_CALLS:vtchat:calls}
+      read-state: ${REDIS_CHANNEL_READ_STATE:vtchat:read-state}
+      presence: ${REDIS_CHANNEL_PRESENCE:vtchat:presence}
+
+rate-limit:
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  trust-forwarded-headers: ${RATE_LIMIT_TRUST_FORWARDED_HEADERS:false}
+  auth:
+    limit: ${AUTH_RATE_LIMIT:10}
+    window-seconds: ${AUTH_RATE_WINDOW_SECONDS:900}
+  otp:
+    limit: ${OTP_RATE_LIMIT:20}
+    window-seconds: ${OTP_RATE_WINDOW_SECONDS:900}
+  search:
+    limit: ${SEARCH_RATE_LIMIT:30}
+    window-seconds: ${SEARCH_RATE_WINDOW_SECONDS:60}
+  message:
+    limit: ${MESSAGE_RATE_LIMIT:60}
+    window-seconds: ${MESSAGE_RATE_WINDOW_SECONDS:60}
+  media:
+    limit: ${MEDIA_RATE_LIMIT:20}
+    window-seconds: ${MEDIA_RATE_WINDOW_SECONDS:60}
+  translation:
+    limit: ${TRANSLATION_RATE_LIMIT:20}
+    window-seconds: ${TRANSLATION_RATE_WINDOW_SECONDS:60}
+  call-signal:
+    limit: ${CALL_SIGNAL_RATE_LIMIT:60}
+    window-seconds: ${CALL_SIGNAL_RATE_WINDOW_SECONDS:60}
+  call-ice:
+    limit: ${CALL_ICE_RATE_LIMIT:600}
+    window-seconds: 60
+  notification:
+    limit: ${NOTIFICATION_RATE_LIMIT:120}
+    window-seconds: 60
+  chat-action:
+    limit: ${CHAT_ACTION_RATE_LIMIT:240}
+    window-seconds: 60
+  typing:
+    limit: ${TYPING_RATE_LIMIT:240}
+    window-seconds: 60
+  ai:
+    limit: ${AI_RATE_LIMIT:20}
+    window-seconds: ${AI_RATE_LIMIT_WINDOW_SECONDS:60}
+  rag-upload:
+    limit: ${RAG_UPLOAD_RATE_LIMIT:5}
+    window-seconds: ${RAG_UPLOAD_RATE_WINDOW_SECONDS:60}
+  rag-reprocess:
+    limit: ${RAG_REPROCESS_RATE_LIMIT:5}
+    window-seconds: ${RAG_REPROCESS_RATE_WINDOW_SECONDS:60}
+  rag-query:
+    limit: ${RAG_QUERY_RATE_LIMIT:20}
+    window-seconds: ${RAG_QUERY_RATE_WINDOW_SECONDS:60}
+
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://localhost:8002}
+    api-key: ${AI_SERVICE_API_KEY:}
+    timeout-ms: ${AI_SERVICE_TIMEOUT_MS:30000}
+    connect-timeout-ms: 2000
+  max-message-length: ${AI_MAX_MESSAGE_LENGTH:4000}
+  max-context-messages: ${AI_MAX_CONTEXT_MESSAGES:20}
+  max-conversations-per-user: ${AI_MAX_CONVERSATIONS_PER_USER:100}
+  stream-max-ms: ${AI_STREAM_MAX_MS:120000}
+
+rag:
+  enabled: ${RAG_ENABLED:true}
+  max-document-size-mb: ${RAG_MAX_DOCUMENT_SIZE_MB:20}
+  max-documents-per-user: ${RAG_MAX_DOCUMENTS_PER_USER:50}
+  max-query-length: ${RAG_MAX_QUERY_LENGTH:2000}
+  max-document-ids: ${RAG_MAX_DOCUMENT_IDS:100}
+  process-timeout-ms: ${RAG_PROCESS_TIMEOUT_MS:600000}
+  stuck-after-minutes: ${RAG_STUCK_AFTER_MINUTES:20}
+  processing-threads: ${RAG_PROCESSING_THREADS:2}
+  access-token-ttl-seconds: 3600

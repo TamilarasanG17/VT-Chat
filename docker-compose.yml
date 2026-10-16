@@ -1,0 +1,38 @@
+# Optional development infrastructure. The project did not use Docker before, so this only provides Redis (Phase 10) and
+# Qdrant, the vector database (Phase 12); MySQL stays whatever you already run.
+#   docker compose up -d redis
+#   docker compose up -d qdrant
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: vtchat-redis
+    # Reads REDIS_PASSWORD from your shell / a .env file next to this file. An empty password = no auth (local dev only).
+    command: ["sh", "-c", "exec redis-server --save '' --appendonly no ${REDIS_PASSWORD:+--requirepass \"$REDIS_PASSWORD\"}"]
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+    ports:
+      # Bound to localhost only: Redis must never be reachable from the internet.
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ${REDIS_PASSWORD:+-a \"$REDIS_PASSWORD\"} ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Phase 12: vector database for "My Knowledge" (RAG). Only the Python AI service talks to it; React never does.
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: vtchat-qdrant
+    environment:
+      # Empty = no API key (local dev only). Set the same value as QDRANT_API_KEY in ai-service/.env.
+      QDRANT__SERVICE__API_KEY: "${QDRANT_API_KEY:-}"
+    ports:
+      # Localhost only: Qdrant must never be reachable from the internet.
+      - "127.0.0.1:${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:

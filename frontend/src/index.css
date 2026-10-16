@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: <html class="dark"> is toggled by ThemeContext (light / dark / system). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+/* Safe-area helpers for notched phones (used by the app shell and the composer). */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left);
+}
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right);
+}
+
+body {
+  margin: 0;
+  min-width: 300px;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+html.dark body {
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
+/* Keep long words (emails, errors) from stretching the layout on narrow screens. */
+p,
+label,
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
+}
+
+/* SweetAlert2 keeps its own font; align it with the app. */
+.swal2-popup {
+  font-family: var(--font-sans);
+  max-width: calc(100vw - 1.5rem);
+  box-sizing: border-box;
+}
+.swal2-container {
+  padding: 0.75rem;
+}
+
+/* Thin, unobtrusive scrollbars inside panels (colors come from the existing slate values). */
+@media (hover: hover) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.5) transparent;
+  }
+}
+
+/* Long URLs and file names wrap inside message bubbles and cards instead of stretching them. */
+.break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Taps on buttons should not flash the browser highlight or zoom on double tap. */
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Reduced motion: keep every state change, drop the movement. Framer Motion honors it through MotionConfig. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+  .animate-spin {
+    animation-duration: 1.2s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

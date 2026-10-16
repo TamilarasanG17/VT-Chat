@@ -1,0 +1,12 @@
+# Install inside a venv:  python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+# Versions are known-good ranges for IndicTrans2 + IndicTransToolkit; adjust if pip reports a conflict.
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29,<1.0
+python-dotenv>=1.0,<2.0
+torch>=2.1
+transformers>=4.40,<4.50
+sentencepiece>=0.2
+sacremoses>=0.1
+sacrebleu>=2.4
+indic-nlp-library-itt>=0.0.1
+IndicTransToolkit>=1.0
