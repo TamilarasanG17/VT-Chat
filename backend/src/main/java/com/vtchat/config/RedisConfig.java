@@ -17,6 +17,7 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.util.StringUtils;
 
 import com.vtchat.redis.RealtimeEventSubscriber;
+import org.springframework.data.redis.connection.RedisPassword;
 
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.SocketOptions;
@@ -52,11 +53,17 @@ public class RedisConfig {
         pool.setMaxWait(configured != null && configured.getMaxWait() != null ? configured.getMaxWait()
                 : Duration.ofSeconds(2));
 
-        LettuceClientConfiguration client = LettucePoolingClientConfiguration.builder()
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder clientBuilder = LettucePoolingClientConfiguration
+                .builder()
                 .poolConfig(pool)
                 .commandTimeout(command)
-                .clientOptions(options)
-                .build();
+                .clientOptions(options);
+
+        if (props.getSsl() != null && props.getSsl().isEnabled()) {
+            clientBuilder.useSsl();
+        }
+
+        LettuceClientConfiguration client = clientBuilder.build();
         log.info("Redis configured for {}:{} (database {})", props.getHost(), props.getPort(), props.getDatabase());
         return new LettuceConnectionFactory(server, client);
     }

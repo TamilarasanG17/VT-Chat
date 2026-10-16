@@ -7,15 +7,18 @@ spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:vtchat}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:vtchat}?sslMode=VERIFY_IDENTITY&serverTimezone=UTC
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME:default}
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
       timeout: 2s
       connect-timeout: 2s
       lettuce:
@@ -44,7 +47,7 @@ logging:
     level: "%5p [req=%X{requestId:-}]"
 
 server:
-  port: ${SERVER_PORT:${PORT:8080}}
+  port: ${SERVER_PORT:${PORT:9090}}
   error:
     include-message: never
     include-stacktrace: never
