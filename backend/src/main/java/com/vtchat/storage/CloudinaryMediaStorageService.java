@@ -111,56 +111,210 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
         return storeAs(request, uuid, content, true);
     }
 
-    private String storeAs(StoreRequest request, String uuid, InputStream content, boolean overwrite)
-            throws IOException {
-        String ext = request.extension() == null ? "" : request.extension().toLowerCase(Locale.ROOT);
-        if (!ext.matches("[a-z0-9]{2,5}")) {
-            throw new IOException("Invalid extension");
-        }
-        Kind kind = kindFor(request, ext);
-        String publicId;
-        try {
-            publicId = CloudinaryRef.newPublicId(cfg.getFolder(), request.area(), request.scope(), uuid, ext,
-                    kind.raw());
-        } catch (IllegalArgumentException e) {
-            throw new IOException("Invalid asset parameters");
-        }
-        Path temp = Files.createTempFile("vtchat-upload-", ".tmp");
-        try {
-            long bytes = Files.copy(content, temp, StandardCopyOption.REPLACE_EXISTING);
-            if (request.contentLength() >= 0 && bytes != request.contentLength()) {
-                throw new IOException("Upload was incomplete");
-            }
-            Map<String, Object> options = ObjectUtils.asMap(
-                    "resource_type", kind.resourceType(),
-                    "type", kind.deliveryType(),
-                    "public_id", publicId,
-                    "overwrite", overwrite,
-                    "unique_filename", false,
-                    "use_filename", false);
-            Map<?, ?> result;
-            try {
-                result = call("upload", cfg.getUploadTimeoutMs(),
-                        () -> cloudinary.uploader().upload(temp.toFile(), options));
-            } catch (StorageException e) {
-                if (e.kind() == StorageException.Kind.TIMEOUT || e.kind() == StorageException.Kind.UNAVAILABLE) {
-                    cleanup(kind, publicId, ext);
-                }
-                throw e;
-            }
-            String returnedFormat = text(result.get("format"));
-            Optional<CloudinaryRef> ref = CloudinaryRef.of(text(result.get("resource_type")), text(result.get("type")),
-                    text(result.get("public_id")), kind.raw() ? null : (returnedFormat == null ? ext : returnedFormat));
-            long reported = result.get("bytes") instanceof Number n ? n.longValue() : -1;
-            if (ref.isEmpty() || !publicId.equals(ref.get().publicId()) || (reported >= 0 && reported != bytes)) {
-                cleanup(kind, publicId, ext);
-                throw new StorageException(StorageException.Kind.FAILED, "upload");
-            }
-            return ref.get().key();
-        } finally {
-            Files.deleteIfExists(temp);
-        }
+    // private String storeAs(StoreRequest request, String uuid, InputStream content, boolean overwrite)
+    //         throws IOException {
+    //     String ext = request.extension() == null ? "" : request.extension().toLowerCase(Locale.ROOT);
+    //     if (!ext.matches("[a-z0-9]{2,5}")) {
+    //         throw new IOException("Invalid extension");
+    //     }
+    //     Kind kind = kindFor(request, ext);
+    //     String publicId;
+    //     try {
+    //         publicId = CloudinaryRef.newPublicId(cfg.getFolder(), request.area(), request.scope(), uuid, ext,
+    //                 kind.raw());
+    //     } catch (IllegalArgumentException e) {
+    //         throw new IOException("Invalid asset parameters");
+    //     }
+    //     Path temp = Files.createTempFile("vtchat-upload-", ".tmp");
+    //     try {
+    //         long bytes = Files.copy(content, temp, StandardCopyOption.REPLACE_EXISTING);
+    //         if (request.contentLength() >= 0 && bytes != request.contentLength()) {
+    //             throw new IOException("Upload was incomplete");
+    //         }
+    //         Map<String, Object> options = ObjectUtils.asMap(
+    //                 "resource_type", kind.resourceType(),
+    //                 "type", kind.deliveryType(),
+    //                 "public_id", publicId,
+    //                 "overwrite", overwrite,
+    //                 "unique_filename", false,
+    //                 "use_filename", false);
+    //         Map<?, ?> result;
+    //         try {
+    //             result = call("upload", cfg.getUploadTimeoutMs(),
+    //                     () -> cloudinary.uploader().upload(temp.toFile(), options));
+    //         } catch (StorageException e) {
+    //             if (e.kind() == StorageException.Kind.TIMEOUT || e.kind() == StorageException.Kind.UNAVAILABLE) {
+    //                 cleanup(kind, publicId, ext);
+    //             }
+    //             throw e;
+    //         }
+    //         String returnedFormat = text(result.get("format"));
+    //         Optional<CloudinaryRef> ref = CloudinaryRef.of(text(result.get("resource_type")), text(result.get("type")),
+    //                 text(result.get("public_id")), kind.raw() ? null : (returnedFormat == null ? ext : returnedFormat));
+    //         long reported = result.get("bytes") instanceof Number n ? n.longValue() : -1;
+    //         if (ref.isEmpty() || !publicId.equals(ref.get().publicId()) || (reported >= 0 && reported != bytes)) {
+    //             cleanup(kind, publicId, ext);
+    //             throw new StorageException(StorageException.Kind.FAILED, "upload");
+    //         }
+    //         return ref.get().key();
+    //     } finally {
+    //         Files.deleteIfExists(temp);
+    //     }
+    // }
+
+    
+private String storeAs(
+        StoreRequest request,
+        String uuid,
+        InputStream content,
+        boolean overwrite
+) throws IOException {
+
+    String ext = request.extension() == null
+            ? ""
+            : request.extension().toLowerCase(Locale.ROOT);
+
+    if (!ext.matches("[a-z0-9]{2,5}")) {
+        throw new IOException("Invalid extension");
     }
+
+    Kind kind = kindFor(request, ext);
+
+    String publicId;
+    try {
+        publicId = CloudinaryRef.newPublicId(
+                cfg.getFolder(),
+                request.area(),
+                request.scope(),
+                uuid,
+                ext,
+                kind.raw()
+        );
+    } catch (IllegalArgumentException e) {
+        throw new IOException("Invalid asset parameters", e);
+    }
+
+    // Preserve the original extension for Cloudinary's upload handling.
+    Path temp = Files.createTempFile(
+            "vtchat-upload-",
+            "." + ext
+    );
+
+    try {
+        long bytes = Files.copy(
+                content,
+                temp,
+                StandardCopyOption.REPLACE_EXISTING
+        );
+
+        if (request.contentLength() >= 0
+                && bytes != request.contentLength()) {
+            throw new IOException("Upload was incomplete");
+        }
+
+        Map<String, Object> options = ObjectUtils.asMap(
+                "resource_type", kind.resourceType(),
+                "type", kind.deliveryType(),
+                "public_id", publicId,
+                "overwrite", overwrite,
+                "unique_filename", false,
+                "use_filename", false
+        );
+
+        Map<?, ?> result;
+
+        try {
+            result = call(
+                    "upload",
+                    cfg.getUploadTimeoutMs(),
+                    () -> cloudinary.uploader().upload(
+                            temp.toFile(),
+                            options
+                    )
+            );
+        } catch (StorageException e) {
+            if (e.kind() == StorageException.Kind.TIMEOUT
+                    || e.kind() == StorageException.Kind.UNAVAILABLE) {
+                cleanup(kind, publicId, ext);
+            }
+            throw e;
+        }
+
+        String returnedResourceType =
+                text(result.get("resource_type"));
+        String returnedDeliveryType =
+                text(result.get("type"));
+        String returnedPublicId =
+                text(result.get("public_id"));
+        String returnedFormat =
+                text(result.get("format"));
+
+        long reportedBytes =
+                result.get("bytes") instanceof Number n
+                        ? n.longValue()
+                        : -1;
+
+        Optional<CloudinaryRef> ref = CloudinaryRef.of(
+                returnedResourceType,
+                returnedDeliveryType,
+                returnedPublicId,
+                kind.raw()
+                        ? null
+                        : (returnedFormat == null
+                                ? ext
+                                : returnedFormat)
+        );
+
+        boolean publicIdMatches =
+                publicId.equals(returnedPublicId);
+        boolean invalidReference = ref.isEmpty();
+        boolean byteCountMismatch =
+                reportedBytes >= 0 && reportedBytes != bytes;
+
+        if (invalidReference
+                || !publicIdMatches
+                || byteCountMismatch) {
+
+            log.error(
+                    "Cloudinary response validation failed: " +
+                    "resourceType={}, deliveryType={}, format={}, " +
+                    "expectedPublicId={}, returnedPublicId={}, " +
+                    "publicIdMatches={}, referenceEmpty={}, " +
+                    "expectedBytes={}, reportedBytes={}",
+                    returnedResourceType,
+                    returnedDeliveryType,
+                    returnedFormat,
+                    publicId,
+                    returnedPublicId,
+                    publicIdMatches,
+                    invalidReference,
+                    bytes,
+                    reportedBytes
+            );
+
+            cleanup(kind, publicId, ext);
+
+            throw new StorageException(
+                    StorageException.Kind.FAILED,
+                    "upload"
+            );
+        }
+
+        log.info(
+                "Cloudinary upload successful: resourceType={}, " +
+                "extension={}, bytes={}",
+                kind.resourceType(),
+                ext,
+                bytes
+        );
+
+        return ref.get().key();
+
+    } finally {
+        Files.deleteIfExists(temp);
+    }
+}
+
 
     private void cleanup(Kind kind, String publicId, String ext) {
         String format = kind.raw() ? null : ext;
@@ -412,13 +566,90 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
         }
     }
 
-    private static StorageException failed(String operation, StorageException.Kind kind, Throwable cause) {
-        if (kind != StorageException.Kind.NOT_FOUND) {
-            log.warn("Cloudinary {} failed category={} cause={} op={}", operation, kind, LogSanitizer.describe(cause),
-                    LogSanitizer.opId());
-        }
-        return new StorageException(kind, operation);
+    // private static StorageException failed(String operation, StorageException.Kind kind, Throwable cause) {
+    //     if (kind != StorageException.Kind.NOT_FOUND) {
+    //         log.warn("Cloudinary {} failed category={} cause={} op={}", operation, kind, LogSanitizer.describe(cause),
+    //                 LogSanitizer.opId());
+    //     }
+    //     return new StorageException(kind, operation);
+    // }
+
+    private static StorageException failed(
+        String operation,
+        StorageException.Kind kind,
+        Throwable cause
+) {
+    Throwable root = cause;
+
+    // Find the deepest nested exception.
+    for (int i = 0; root != null
+            && root.getCause() != null
+            && root.getCause() != root
+            && i < 10; i++) {
+        root = root.getCause();
     }
+
+    log.warn(
+        "Cloudinary failure: operation={}, category={}, " +
+        "exceptionType={}, rootCauseType={}, op={}",
+        operation,
+        kind,
+        cause == null ? "unknown" : cause.getClass().getName(),
+        root == null ? "unknown" : root.getClass().getName(),
+        LogSanitizer.opId()
+    );
+
+    // Log the exception chain without printing potentially sensitive messages.
+    Throwable current = cause;
+    for (int i = 0; current != null && i < 10; i++) {
+        log.warn(
+            "Cloudinary exception chain [{}]: {}",
+            i,
+            current.getClass().getName()
+        );
+
+        Throwable next = current.getCause();
+        if (next == current) {
+            break;
+        }
+        current = next;
+    }
+    if (cause != null) {
+    StackTraceElement[] frames = cause.getStackTrace();
+
+    for (int i = 0; i < Math.min(frames.length, 8); i++) {
+        log.warn("Cloudinary failure stack [{}]: {}", i, frames[i]);
+    }
+}
+
+log.warn(
+        "Cloudinary SDK response error: operation={}, message={}",
+        operation,
+        safeCloudinaryError(cause)
+);
+    return new StorageException(kind, operation);
+}
+
+private static String safeCloudinaryError(Throwable error) {
+    if (error == null || error.getMessage() == null) {
+        return "No error message provided by Cloudinary SDK";
+    }
+
+    String message = error.getMessage();
+
+    // Redact common credential fields and URLs before logging.
+    message = message.replaceAll(
+            "(?i)(api_key|api_secret|signature|authorization|token)"
+                    + "\\s*[:=]\\s*[^,\\s}]+",
+            "$1=[REDACTED]"
+    );
+    message = message.replaceAll(
+            "(?i)https?://\\S+",
+            "[URL_REDACTED]"
+    );
+
+    return message.substring(0, Math.min(message.length(), 500));
+}
 
     static StorageException.Kind classify(Throwable t) {
         int depth = 0;

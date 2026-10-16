@@ -19,14 +19,14 @@ spring:
       database: ${REDIS_DATABASE:0}
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
-      timeout: 10s
-      connect-timeout: 10s
+      timeout: 3s
+      connect-timeout: 3s
       lettuce:
         pool:
           max-active: 8
           max-idle: 8
           min-idle: 0
-          max-wait: 10s
+          max-wait: 3s
   jpa:
     open-in-view: false
     hibernate:
@@ -94,7 +94,7 @@ app:
     same-site: ${COOKIE_SAME_SITE:Lax}
 
 media-storage:
-  provider: ${MEDIA_STORAGE_PROVIDER:local}
+  provider: ${MEDIA_STORAGE_PROVIDER:cloudinary}
   allow-local-in-production: ${MEDIA_ALLOW_LOCAL_IN_PRODUCTION:false}
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME:}
