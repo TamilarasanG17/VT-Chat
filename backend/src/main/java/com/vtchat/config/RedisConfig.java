@@ -32,8 +32,11 @@ public class RedisConfig {
     public RedisConnectionFactory redisConnectionFactory(RedisProperties props) {
         RedisStandaloneConfiguration server = new RedisStandaloneConfiguration(props.getHost(), props.getPort());
         server.setDatabase(props.getDatabase());
+        if (StringUtils.hasText(props.getUsername())) {
+            server.setUsername(props.getUsername());
+        }
         if (StringUtils.hasText(props.getPassword())) {
-            server.setPassword(props.getPassword());
+            server.setPassword(RedisPassword.of(props.getPassword()));
         }
         Duration command = props.getTimeout() != null ? props.getTimeout() : Duration.ofSeconds(2);
         Duration connect = props.getConnectTimeout() != null ? props.getConnectTimeout() : Duration.ofSeconds(2);
